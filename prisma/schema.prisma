@@ -1,0 +1,81 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model CampusPartner {
+  id                  String         @id @default(uuid())
+  name                String
+  email               String         @unique
+  college             String
+  referralCode        String         @unique
+  targetRegistrations Int            @default(60)
+  clicks              Int            @default(0)
+  active              Boolean        @default(true)
+  isDemo              Boolean        @default(false)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  registrations       Registration[]
+}
+
+model Registration {
+  id             String         @id @default(uuid())
+  fullName       String
+  email          String         @unique
+  college        String
+  graduationYear String
+  branch         String
+  channel        String         @default("DIRECT") // CAMPUS_PARTNER, STUDENT_REFERRAL, COLLEGE_COMMUNITIES, TARGETED_EMAIL, DIRECT
+  referralCode   String?
+  myReferralCode String?        @unique // Generated referral code for student-to-student sharing
+  partnerId      String?
+  partner        CampusPartner? @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  referredById   String?
+  campaignDay    Int            @default(1) // Day 1 to 7
+  isDemo         Boolean        @default(false)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([channel])
+  @@index([referralCode])
+  @@index([campaignDay])
+  @@index([isDemo])
+}
+
+model DuplicateSubmission {
+  id             String   @id @default(uuid())
+  email          String
+  attemptedAt    DateTime @default(now())
+  referralCode   String?
+  channel        String?
+  isDemo         Boolean  @default(false)
+}
+
+model Expense {
+  id          String   @id @default(uuid())
+  category    String   // CREATIVE, TARGETED_PROMOTION, CONTINGENCY
+  description String
+  amount      Float
+  date        DateTime @default(now())
+  isDemo      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model CampaignMeta {
+  id                 String   @id @default("campuspulse_active_campaign")
+  title              String   @default("Build Your First AI Project in 60 Minutes")
+  targetTotal        Int      @default(500)
+  totalDays          Int      @default(7)
+  currentDay         Int      @default(4)
+  budgetCreative     Float    @default(300.0)
+  budgetPromotion    Float    @default(1200.0)
+  budgetContingency  Float    @default(500.0)
+  updatedAt          DateTime @updatedAt
+}
